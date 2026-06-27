@@ -1,0 +1,34 @@
+-- 1. Criação da Tabela (idempotente)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'infraestrutura_energia'
+  ) THEN
+    CREATE TABLE public.infraestrutura_energia (
+      id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+      pais TEXT NOT NULL,
+      regiao TEXT NOT NULL,
+      cidade TEXT NOT NULL,
+      fonte_energia TEXT NOT NULL,
+      uso_principal TEXT NOT NULL,
+      ano_instalacao INT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+  END IF;
+END $$;
+
+-- 2. Habilitar RLS (safe to run multiple times)
+ALTER TABLE public.infraestrutura_energia ENABLE ROW LEVEL SECURITY;
+
+-- 3. Inserir os dados (optional: also make this idempotent—see below)
+INSERT INTO public.infraestrutura_energia (pais, regiao, cidade, fonte_energia, uso_principal, ano_instalacao)
+VALUES 
+  ('Brasil', 'Sudeste', 'São Paulo', 'Hidrelétrica', 'Geral/Educacional', 2020),
+  ('EUA', 'Oeste', 'Califórnia', 'Solar/Eólica (parcial)', 'Geral/Corporativo', 2018),
+  ('Argentina', 'Pampa', 'Buenos Aires', 'Gás natural + renováveis', 'Educacional', 2021),
+  ('Espanha', 'Mediterrâneo', 'Madrid', 'Eólica/Solar', 'Geral/Turismo', 2019),
+  ('França', 'Atlântico', 'Paris', 'Nuclear (70%)', 'Pesquisa/Corporativo', 2022),
+  ('China', 'Leste', 'Pequim', 'Carvão + Solar (transição)', 'Geral/Comércio', 2019);
